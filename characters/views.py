@@ -1,6 +1,7 @@
 import random
 
 from django.db.models import QuerySet
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import status, viewsets, generics
 from rest_framework.decorators import api_view
 from rest_framework.request import Request
@@ -10,6 +11,7 @@ from characters.models import Character
 from characters.serializers import CharacterSerializer
 
 
+@extend_schema(responses={status.HTTP_200_OK: CharacterSerializer})
 @api_view(["GET"])
 def get_random_characters_view(request: Request) -> Response:
     pks = Character.objects.values_list("pk", flat=True)
@@ -30,3 +32,16 @@ class CharacterListView(generics.ListAPIView):
         if name is not None:
             queryset = queryset.filter(username__icontains=name)
         return queryset
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="name",
+                description="Filter by insensitive",
+                required=False,
+                type=str,
+            )
+        ],
+    )
+    def get(self, request, *args, **kwargs) -> Response:
+        return super().get(request, *args, **kwargs)
